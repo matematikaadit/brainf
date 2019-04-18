@@ -1,13 +1,13 @@
 use std::io::{self, Read, Write};
 
-/// Maximum length of the Memmory size of the VM
+/// Maximum length of VM's memory size
 const MAX_LEN: usize = 30_000; // recommended size
 
 /// Brainfuck VM
 pub struct Vm {
-    /// Pointer for the `<` and `>` instructions
+    /// Pointer to be manipulated by the instructions
     p: usize,
-    /// Memory location of the data for the pointer
+    /// Memory for holding the data
     mem: Vec<u8>,
     /// Return stack for holding the jump location in the `[` and `]` instruction pair
     rstack: Vec<usize>,

@@ -1,4 +1,4 @@
-# brainf
+# Brainf
 
 An interpreter for brainfuck programming language.
 
