@@ -1,0 +1,7 @@
+[package]
+name = "brainf"
+version = "0.1.0"
+authors = ["Adit Cahya Ramadhan <matematika.adit@gmail.com>"]
+edition = "2018"
+
+[dependencies]
