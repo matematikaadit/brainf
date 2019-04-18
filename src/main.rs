@@ -3,6 +3,7 @@ use std::env;
 use std::process;
 use std::fs::File;
 
+// recommended size
 const MAX_LEN: usize = 30_000;
 
 struct Vm {
@@ -23,7 +24,8 @@ impl Vm {
         self.p = (self.p + 1) % MAX_LEN;
     }
     fn left(&mut self) {
-        self.p = (self.p + MAX_LEN - 1) % MAX_LEN; // prevent underflow provided usize max >= 2 * 30_000
+        // prevent underflow, provided usize max >= 2 * 30_000
+        self.p = (self.p + MAX_LEN - 1) % MAX_LEN;
     }
     fn inc(&mut self) {
         self.mem[self.p] = self.mem[self.p].wrapping_add(1);
@@ -74,8 +76,8 @@ impl Vm {
                     }
                     // loop finished, continue to next byte
                     (Some(_), false) => {
+                        self.rstack.pop(); // clear this jump
                         cursor += 1;
-                        self.rstack.pop(); // don't forget to pop that jump address
                     }
                     (None, _) => return Err(cursor),
                 }
@@ -94,7 +96,11 @@ impl Vm {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        println!("USAGE: brainf <file>");
+        println!(r#"brainf v0.1: brainfuck interpreter.
+
+USAGE: brainf <file>
+
+<file> brainfuck program to run."#);
         process::exit(1);
     }
 
