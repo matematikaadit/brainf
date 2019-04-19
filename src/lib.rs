@@ -130,3 +130,33 @@ impl<T> Vm<T> where T: IO {
 pub fn default_vm() -> Vm<StdIO> {
     Vm::new(StdIO)
 }
+
+#[cfg(test)]
+mod test {
+    use crate::IO;
+    use crate::Vm;
+
+    struct TestIO(Vec<u8>);
+
+    impl IO for &mut TestIO {
+        fn get(&mut self) -> u8 {
+            0
+        }
+        fn put(&mut self, byte: u8) {
+            self.0.push(byte)
+        }
+    }
+
+    #[test]
+    fn test_hello_world() {
+        // taken from wikipedia
+        let hello_world = b"++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
+        let mut test_io = TestIO(Vec::new());
+        {
+            // on scope so we can get back the mutably borrowed test_io when it finished
+            let mut vm = Vm::new(&mut test_io);
+            assert_eq!(vm.run(hello_world), Ok(()));
+        }
+        assert_eq!(test_io.0, b"Hello World!\n");
+    }
+}
