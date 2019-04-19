@@ -181,21 +181,22 @@ mod test {
 
     #[test]
     fn adding_two_one_digit_number() {
-        let mut script = Vec::new();
-        // TODO: this is kinda bad, design an easier way to generate script?
-        script.push(b',');
-        script.append(&mut vec![b'-'; b'0' as usize]);
-        script.push(b'>');
-        script.push(b',');
-        script.append(&mut vec![b'-'; b'0' as usize]);
-        script.append(&mut vec![b'[', b'-', b'<', b'+', b'>', b']', b'<']);
-        script.append(&mut vec![b'+'; b'0' as usize]);
-        script.push(b'.');
+        let script = b",>++++[->++++[-<<--->>]<],>++++[->++++[-<<--->>]<]<[-<+>]++++[->++++[-<<+++>>]<]<.";
+
+        // 2 + 6 == 8
         let mut test_io = TestIO::new(vec![b'2', b'6']);
         {
             let mut vm = Vm::new(&mut test_io);
-            assert_eq!(vm.run(&script), Ok(()));
+            assert_eq!(vm.run(&script[..]), Ok(()));
         }
         assert_eq!(test_io.output, b"8");
+
+        // 4 + 3 == 7
+        let mut test_io = TestIO::new(vec![b'4', b'3']);
+        {
+            let mut vm = Vm::new(&mut test_io);
+            assert_eq!(vm.run(&script[..]), Ok(()));
+        }
+        assert_eq!(test_io.output, b"7");
     }
 }
