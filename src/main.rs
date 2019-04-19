@@ -33,7 +33,7 @@ USAGE: brainf <file>
         }
     }
 
-    let mut vm = brainf::Vm::new();
+    let mut vm = brainf::default_vm();
 
     match vm.run(&script) {
         Err(pos) => {

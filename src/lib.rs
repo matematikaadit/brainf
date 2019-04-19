@@ -1,25 +1,60 @@
 use std::io::{self, Read, Write};
 
+/// Trait for our VM Input/Output
+pub trait IO {
+    /// Get one byte from input
+    fn get(&mut self) -> u8;
+    /// Put one byte into output
+    fn put(&mut self, byte: u8);
+}
+
+/// Input/Output using io::stdin() and io::stdout()
+pub struct StdIO;
+
+impl IO for StdIO {
+    fn get(&mut self) -> u8 {
+        let mut buff = [0; 1];
+        match io::stdin().read(&mut buff) {
+            Ok(0) => 0,
+            Ok(_) => buff[0],
+            Err(e) => {
+                // print error, but return 0 (null)
+                eprintln!("IO Error in `get`: {}", e);
+                0
+            }
+        }
+    }
+    fn put(&mut self, byte: u8) {
+        match io::stdout().write(&[byte]) {
+            Ok(_) => (),
+            Err(e) => eprintln!("IO Error in `put`: {}", e),
+        }
+    }
+}
+
 /// Maximum length of VM's memory size
 const MAX_LEN: usize = 30_000; // recommended size
 
 /// Brainfuck VM
-pub struct Vm {
+pub struct Vm<T> {
     /// Pointer to be manipulated by the instructions
     p: usize,
     /// Memory for holding the data
     mem: Vec<u8>,
     /// Return stack for holding the jump location in the `[` and `]` instruction pair
     rstack: Vec<usize>,
+    /// Input/Output for the `.` and `,` instruction
+    io: T,
 }
 
-impl Vm {
+impl<T> Vm<T> where T: IO {
     /// Create a new brainfuck VM
-    pub fn new() -> Vm {
+    pub fn new(io: T) -> Vm<T> {
         Vm {
             p: 0,
             mem: vec![0; MAX_LEN],
             rstack: Vec::new(),
+            io: io,
         }
     }
 
@@ -43,26 +78,6 @@ impl Vm {
     fn dec(&mut self) {
         self.mem[self.p] = self.mem[self.p].wrapping_sub(1);
     }
-
-    /// Output currently pointed value into stdout
-    fn put(&self) {
-        let buff = [self.mem[self.p]];
-        match io::stdout().write(&buff) {
-            Ok(_) => (),
-            Err(e) => eprintln!("IO Error in `put`: {}", e),
-        }
-    }
-
-    /// Get one byte from the input and put it in the currently pointed value
-    fn get(&mut self) {
-        let mut buff = [0; 1];
-        match io::stdin().read(&mut buff) {
-            Ok(0) => self.mem[self.p] = 0,
-            Ok(_) => self.mem[self.p] = buff[0],
-            Err(e) => eprintln!("IO Error in `get`: {}", e),
-        }
-    }
-
     /// Check if currently pointed value is zero
     fn is_zero(&self) -> bool {
         self.mem[self.p] == 0
@@ -79,8 +94,8 @@ impl Vm {
                 b'>' => self.right(),
                 b'+' => self.inc(),
                 b'-' => self.dec(),
-                b'.' => self.put(),
-                b',' => self.get(),
+                b'.' => self.io.put(self.mem[self.p]),
+                b',' => self.mem[self.p] = self.io.get(),
                 b'[' => self.rstack.push(cursor+1),
                 b']' => branching = true,
                 _ => (),
@@ -109,4 +124,9 @@ impl Vm {
             Err(self.rstack[self.rstack.len()-1])
         }
     }
+}
+
+/// Create default VM using IO from StdIO
+pub fn default_vm() -> Vm<StdIO> {
+    Vm::new(StdIO)
 }
