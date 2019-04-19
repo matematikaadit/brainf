@@ -1,10 +1,10 @@
 use std::io::{self, Read, Write};
 
-/// Trait for our VM Input/Output
+/// Trait for our VM's Input/Output
 pub trait IO {
-    /// Get one byte from input
+    /// Get one byte from the input
     fn get(&mut self) -> u8;
-    /// Put one byte into output
+    /// Put one byte into the output
     fn put(&mut self, byte: u8);
 }
 
@@ -83,6 +83,8 @@ impl<T> Vm<T> where T: IO {
         self.mem[self.p] == 0
     }
 
+    // TODO: maybe create custom error type and return it instead?
+    // also how about adding error type for io instruction in case they fail?
     /// Run a brainfuck script, in case of unmatched bracket, return the unmatched location
     pub fn run(&mut self, script: &[u8]) -> Result<(), usize> {
         let mut cursor = 0;
