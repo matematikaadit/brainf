@@ -137,15 +137,32 @@ pub fn default_vm() -> Vm<StdIO> {
 mod test {
     use crate::IO;
     use crate::Vm;
+    use std::collections::VecDeque;
+    use std::iter::{IntoIterator, FromIterator};
 
-    struct TestIO(Vec<u8>);
+    struct TestIO {
+        input: VecDeque<u8>,
+        output: Vec<u8>,
+    }
+
+    impl TestIO {
+        fn new(input: impl IntoIterator<Item=u8>) -> Self {
+            TestIO {
+                input: VecDeque::from_iter(input),
+                output: Vec::new(),
+            }
+        }
+    }
 
     impl IO for &mut TestIO {
         fn get(&mut self) -> u8 {
-            0
+            match self.input.pop_front() {
+                Some(n) => n,
+                None => 0,
+            }
         }
         fn put(&mut self, byte: u8) {
-            self.0.push(byte)
+            self.output.push(byte)
         }
     }
 
@@ -153,12 +170,32 @@ mod test {
     fn test_hello_world() {
         // taken from wikipedia
         let hello_world = b"++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
-        let mut test_io = TestIO(Vec::new());
+        let mut test_io = TestIO::new(Vec::new());
         {
             // on scope so we can get back the mutably borrowed test_io when it finished
             let mut vm = Vm::new(&mut test_io);
             assert_eq!(vm.run(hello_world), Ok(()));
         }
-        assert_eq!(test_io.0, b"Hello World!\n");
+        assert_eq!(test_io.output, b"Hello World!\n");
+    }
+
+    #[test]
+    fn adding_two_one_digit_number() {
+        let mut script = Vec::new();
+        // TODO: this is kinda bad, design an easier way to generate script?
+        script.push(b',');
+        script.append(&mut vec![b'-'; b'0' as usize]);
+        script.push(b'>');
+        script.push(b',');
+        script.append(&mut vec![b'-'; b'0' as usize]);
+        script.append(&mut vec![b'[', b'-', b'<', b'+', b'>', b']', b'<']);
+        script.append(&mut vec![b'+'; b'0' as usize]);
+        script.push(b'.');
+        let mut test_io = TestIO::new(vec![b'2', b'6']);
+        {
+            let mut vm = Vm::new(&mut test_io);
+            assert_eq!(vm.run(&script), Ok(()));
+        }
+        assert_eq!(test_io.output, b"8");
     }
 }
