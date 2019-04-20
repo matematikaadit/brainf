@@ -182,6 +182,7 @@ mod test {
     #[test]
     fn adding_two_one_digit_number() {
         let script = b",>++++[->++++[-<<--->>]<],>++++[->++++[-<<--->>]<]<[-<+>]++++[->++++[-<<+++>>]<]<.";
+        // Note that this only works with a single digit result
 
         // 2 + 6 == 8
         let mut test_io = TestIO::new(vec![b'2', b'6']);
