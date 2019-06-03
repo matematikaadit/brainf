@@ -1,4 +1,94 @@
-use std::io::{self, Read, Write};
+// new implementation
+
+use std::io;
+use std::io::Write;
+use std::io::Read;
+use std::num::Wrapping;
+
+
+pub enum Error {
+    RBrac(usize),
+    LBrac(Vec<usize>),
+    Input(io::Error),
+    Output(io::Error),
+}
+
+
+pub fn eval<R, W>(src: &[u8], input: &mut R, output: &mut W) -> Result<(), Error>
+where R: Read,
+      W: Write {
+    let mut iptr = 0;
+    let mut rstack = Vec::new();
+
+    const LEN: usize = 30_000;
+    let mut data = vec![Wrapping(0u8); LEN];
+    let mut dptr = 0;
+
+    loop {
+        match src.get(iptr) {
+            Some(b'+') => {
+                data[dptr] += Wrapping(1);
+                iptr += 1;
+            }
+            Some(b'-') => {
+                data[dptr] -= Wrapping(1);
+                iptr += 1;
+            }
+            Some(b'<') => {
+                // avoiding underflow
+                dptr = dptr.checked_sub(1).unwrap_or_else(|| LEN);
+                iptr += 1;
+            }
+            Some(b'>') => {
+                dptr = (dptr + 1) % LEN;
+                iptr += 1;
+            }
+            Some(b',') => {
+                let mut buff = [0];
+                input.read(&mut buff).map_err(|e| Error::Input(e))?;
+                data[dptr] = Wrapping(buff[0]);
+                iptr += 1;
+            }
+            Some(b'.') => {
+                output.write(&[data[dptr].0]).map_err(|e| Error::Output(e))?;
+                iptr += 1;
+            }
+            Some(b'[') => {
+                rstack.push(iptr);
+                iptr += 1;
+            }
+            Some(b']') => {
+                match rstack.last() {
+                    Some(&ret) => {
+                        if data[dptr].0 == 0 {
+                            // jump out
+                            rstack.pop();
+                            iptr += 1;
+                        } else {
+                            // loop
+                            iptr = ret + 1;
+                        }
+                    },
+                    None => return Err(Error::RBrac(iptr)),
+                }
+            }
+            Some(_) => (), // ignore other character
+            None => {
+                break;
+            }
+        }
+    }
+    if rstack.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::LBrac(rstack))
+    }
+}
+
+
+
+// old implementation
+
 
 /// Trait for our VM's Input/Output
 pub trait IO {
