@@ -19,7 +19,7 @@ fn main() {
         Ok(file) => file,
         Err(e) => {
             eprintln!("Error opening script: {}", e);
-            exit(1)
+            exit(1);
         }
     };
 
