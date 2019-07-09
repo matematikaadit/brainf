@@ -5,7 +5,7 @@ use std::num::Wrapping;
 
 
 /// Maximum length for the brainfuck program's memory
-const MAXLEN: usize = 30_000; // recommended size
+const MAXLEN: usize = 1 << 16; // for easy wrapping behaviour
 
 
 /// Possible Error when evaluating the brainfuck program
@@ -29,35 +29,34 @@ where R: Read,
     let mut rstack = Vec::new();
 
     let mut data = vec![Wrapping(0u8); MAXLEN];
-    let mut dptr = 0;
+    let mut dptr = Wrapping(0u16);
 
     loop {
         match src.get(iptr) {
             Some(b'+') => {
-                data[dptr] += Wrapping(1);
+                data[dptr.0 as usize] += Wrapping(1);
                 iptr += 1;
             }
             Some(b'-') => {
-                data[dptr] -= Wrapping(1);
+                data[dptr.0 as usize] -= Wrapping(1);
                 iptr += 1;
             }
             Some(b'<') => {
-                // avoiding underflow
-                dptr = dptr.checked_sub(1).unwrap_or_else(|| MAXLEN);
+                dptr -= Wrapping(1);
                 iptr += 1;
             }
             Some(b'>') => {
-                dptr = (dptr + 1) % MAXLEN;
+                dptr += Wrapping(1);
                 iptr += 1;
             }
             Some(b',') => {
                 let mut buff = [0];
                 input.read(&mut buff).map_err(|e| Error::Input(e))?;
-                data[dptr] = Wrapping(buff[0]);
+                data[dptr.0 as usize] = Wrapping(buff[0]);
                 iptr += 1;
             }
             Some(b'.') => {
-                output.write(&[data[dptr].0]).map_err(|e| Error::Output(e))?;
+                output.write(&[data[dptr.0 as usize].0]).map_err(|e| Error::Output(e))?;
                 iptr += 1;
             }
             Some(b'[') => {
@@ -67,7 +66,7 @@ where R: Read,
             Some(b']') => {
                 match rstack.last() {
                     Some(&ret) => {
-                        if data[dptr].0 == 0 {
+                        if data[dptr.0 as usize].0 == 0 {
                             // jump out
                             rstack.pop();
                             iptr += 1;
