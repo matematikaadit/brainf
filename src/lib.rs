@@ -104,18 +104,25 @@ struct Mem {
 }
 
 impl Mem {
+    /// Create new memory with all bytes 0 and the pointer points to the first slot
     fn new() -> Mem {
         Mem {
             buff: vec![Wrapping(0); MAXLEN],
             ptr: Wrapping(0),
         }
     }
+
+    /// Get mutable reference to the current byte
     fn get_mut(&mut self) -> &mut Wrapping<u8> {
         &mut self.buff[self.ptr.0 as usize]
     }
+
+    /// Get the value of the current byte
     fn get(&self) -> u8 {
         self.buff[self.ptr.0 as usize].0
     }
+
+    /// Get mutable reference to the pointer
     fn ptr_mut(&mut self) -> &mut Wrapping<u16> {
         &mut self.ptr
     }
