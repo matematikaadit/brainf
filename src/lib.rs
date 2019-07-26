@@ -31,28 +31,31 @@ where R: Read,
 
     let mut mem = Mem::new();
 
+    const ONE_W8: Wrapping<u8> = Wrapping(1);
+    const ONE_W16: Wrapping<u16> = Wrapping(1);
+
     loop {
         match src.get(iptr) {
             Some(b'+') => {
-                *mem.get_mut() += 1;
+                *mem.get_mut() += ONE_W8;
                 iptr += 1;
             }
             Some(b'-') => {
-                *mem.get_mut() -= 1;
+                *mem.get_mut() -= ONE_W8;
                 iptr += 1;
             }
             Some(b'<') => {
-                *mem.ptr_mut() -= 1;
+                *mem.ptr_mut() -= ONE_W16;
                 iptr += 1;
             }
             Some(b'>') => {
-                *mem.ptr_mut() += 1;
+                *mem.ptr_mut() += ONE_W16;
                 iptr += 1;
             }
             Some(b',') => {
                 let mut buff = [0];
                 input.read(&mut buff).map_err(|e| Error::Input(e))?;
-                *mem.get_mut() = buff[0];
+                *mem.get_mut() = Wrapping(buff[0]);
                 iptr += 1;
             }
             Some(b'.') => {
@@ -92,8 +95,11 @@ where R: Read,
     }
 }
 
+/// Memory for the brainfuck program
 struct Mem {
+    /// The place where we put the bytes
     buff: Vec<Wrapping<u8>>,
+    /// Pointer to the current byte
     ptr: Wrapping<u16>,
 }
 
@@ -104,14 +110,14 @@ impl Mem {
             ptr: Wrapping(0),
         }
     }
-    fn get_mut(&mut self) -> &mut u8 {
-        &mut self.buff[self.ptr.0 as usize].0
+    fn get_mut(&mut self) -> &mut Wrapping<u8> {
+        &mut self.buff[self.ptr.0 as usize]
     }
     fn get(&self) -> u8 {
         self.buff[self.ptr.0 as usize].0
     }
-    fn ptr_mut(&mut self) -> &mut u16 {
-        &mut self.ptr.0
+    fn ptr_mut(&mut self) -> &mut Wrapping<u16> {
+        &mut self.ptr
     }
 }
 
