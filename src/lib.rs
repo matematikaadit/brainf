@@ -25,38 +25,39 @@ pub enum Error {
 pub fn eval<R, W>(src: &[u8], input: &mut R, output: &mut W) -> Result<(), Error>
 where R: Read,
       W: Write {
+
     let mut iptr = 0;
     let mut rstack = Vec::new();
 
-    let mut data = vec![Wrapping(0u8); MAXLEN];
-    let mut dptr = Wrapping(0u16);
+    let mut mem = Mem::new();
 
     loop {
         match src.get(iptr) {
             Some(b'+') => {
-                data[dptr.0 as usize] += Wrapping(1);
+                *mem.get_mut() += 1;
                 iptr += 1;
             }
             Some(b'-') => {
-                data[dptr.0 as usize] -= Wrapping(1);
+                *mem.get_mut() -= 1;
                 iptr += 1;
             }
             Some(b'<') => {
-                dptr -= Wrapping(1);
+                *mem.ptr_mut() -= 1;
                 iptr += 1;
             }
             Some(b'>') => {
-                dptr += Wrapping(1);
+                *mem.ptr_mut() += 1;
                 iptr += 1;
             }
             Some(b',') => {
                 let mut buff = [0];
                 input.read(&mut buff).map_err(|e| Error::Input(e))?;
-                data[dptr.0 as usize] = Wrapping(buff[0]);
+                *mem.get_mut() = buff[0];
                 iptr += 1;
             }
             Some(b'.') => {
-                output.write(&[data[dptr.0 as usize].0]).map_err(|e| Error::Output(e))?;
+                let buff = [mem.get()];
+                output.write(&buff).map_err(|e| Error::Output(e))?;
                 iptr += 1;
             }
             Some(b'[') => {
@@ -66,7 +67,7 @@ where R: Read,
             Some(b']') => {
                 match rstack.last() {
                     Some(&ret) => {
-                        if data[dptr.0 as usize].0 == 0 {
+                        if mem.get() == 0 {
                             // jump out
                             rstack.pop();
                             iptr += 1;
@@ -88,6 +89,29 @@ where R: Read,
         Ok(())
     } else {
         Err(Error::LBrac(rstack))
+    }
+}
+
+struct Mem {
+    buff: Vec<Wrapping<u8>>,
+    ptr: Wrapping<u16>,
+}
+
+impl Mem {
+    fn new() -> Mem {
+        Mem {
+            buff: vec![Wrapping(0); MAXLEN],
+            ptr: Wrapping(0),
+        }
+    }
+    fn get_mut(&mut self) -> &mut u8 {
+        &mut self.buff[self.ptr.0 as usize].0
+    }
+    fn get(&self) -> u8 {
+        self.buff[self.ptr.0 as usize].0
+    }
+    fn ptr_mut(&mut self) -> &mut u16 {
+        &mut self.ptr.0
     }
 }
 
