@@ -22,14 +22,12 @@ pub enum Error {
 
 
 /// Evaluating a brainfuck script with input/output manually provided to the function
-pub fn eval<R, W>(src: &[u8], input: &mut R, output: &mut W) -> Result<(), Error>
+fn eval<R, W>(src: &[u8], mem: &mut Mem, input: &mut R, output: &mut W) -> Result<(), Error>
 where R: Read,
       W: Write {
 
     let mut iptr = 0;
     let mut rstack = Vec::new();
-
-    let mut mem = Mem::new();
 
     const ONE_W8: Wrapping<u8> = Wrapping(1);
     const ONE_W16: Wrapping<u16> = Wrapping(1);
@@ -131,13 +129,13 @@ impl Mem {
 
 /// Evaluating brainfuck script with the default stdin/stdout
 pub fn eval_with_stdio(src: &[u8]) -> Result<(), Error> {
-    eval(src, &mut io::stdin(), &mut io::stdout())
+    eval(src, &mut Mem::new(), &mut io::stdin(), &mut io::stdout())
 }
 
 
 #[cfg(test)]
 mod test {
-    use super::eval;
+    use super::{eval, Mem};
     use std::io;
     use std::io::Cursor;
 
@@ -146,7 +144,7 @@ mod test {
         // taken from wikipedia
         let hello_world = b"++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
         let mut output = Vec::new();
-        assert!(eval(hello_world, &mut io::empty(), &mut output).is_ok());
+        assert!(eval(hello_world, &mut Mem::new(), &mut io::empty(), &mut output).is_ok());
         assert_eq!(&output, b"Hello World!\n");
     }
 
@@ -159,27 +157,28 @@ mod test {
         // 2 + 6 == 8
         let mut input = Cursor::new(b"26");
         let mut output = Vec::new();
-        assert!(eval(script, &mut input, &mut output).is_ok());
+        assert!(eval(script, &mut Mem::new(), &mut input, &mut output).is_ok());
         assert_eq!(&output, b"8");
 
         // 4 + 3 == 7
         let mut input = Cursor::new(b"43");
         output.clear();
-        assert!(eval(script, &mut input, &mut output).is_ok());
+        assert!(eval(script, &mut Mem::new(), &mut input, &mut output).is_ok());
         assert_eq!(&output, b"7");
     }
 
     #[test]
     fn wrapping_cell_content() {
-        let script = b"-.";
-        let mut output = Vec::new();
-        assert!(eval(script, &mut io::empty(), &mut output).is_ok());
-        assert_eq!(&output, &[255]);
+        let script = b"-";
+        let mut mem = Mem::new();
+        assert!(eval(script, &mut mem, &mut io::empty(), &mut io::sink()).is_ok());
+        assert_eq!(mem.get(), 255);
     }
 
     #[test]
     fn wrapping_pointer() {
         let script = b"<<";
-        assert!(eval(script, &mut io::empty(), &mut io::sink()).is_ok());
+        assert!(eval(script, &mut Mem::new(), &mut io::empty(), &mut io::sink()).is_ok());
     }
+
 }
