@@ -168,4 +168,18 @@ mod test {
         assert!(eval(script, &mut input, &mut output).is_ok());
         assert_eq!(&output, b"7");
     }
+
+    #[test]
+    fn wrapping_cell_content() {
+        let script = b"-.";
+        let mut output = Vec::new();
+        assert!(eval(script, &mut io::empty(), &mut output).is_ok());
+        assert_eq!(&output, &[255]);
+    }
+
+    #[test]
+    fn wrapping_pointer() {
+        let script = b"<<";
+        assert!(eval(script, &mut io::empty(), &mut io::sink()).is_ok());
+    }
 }
