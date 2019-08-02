@@ -22,7 +22,7 @@ pub enum Error {
 
 
 /// Evaluating a brainfuck script with input/output manually provided to the function
-fn eval<R, W>(src: &[u8], mem: &mut Mem, input: &mut R, output: &mut W) -> Result<(), Error>
+fn eval<R, W>(src: &[u8], mem: &mut Mem, mut input: R, mut output: W) -> Result<(), Error>
 where R: Read,
       W: Write {
 
@@ -144,7 +144,7 @@ mod test {
         // taken from wikipedia
         let hello_world = b"++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
         let mut output = Vec::new();
-        assert!(eval(hello_world, &mut Mem::new(), &mut io::empty(), &mut output).is_ok());
+        assert!(eval(hello_world, &mut Mem::new(), io::empty(), &mut output).is_ok());
         assert_eq!(&output, b"Hello World!\n");
     }
 
@@ -171,14 +171,14 @@ mod test {
     fn wrapping_cell_content() {
         let script = b"-";
         let mut mem = Mem::new();
-        assert!(eval(script, &mut mem, &mut io::empty(), &mut io::sink()).is_ok());
+        assert!(eval(script, &mut mem, io::empty(), io::sink()).is_ok());
         assert_eq!(mem.get(), 255);
     }
 
     #[test]
     fn wrapping_pointer() {
         let script = b"<<";
-        assert!(eval(script, &mut Mem::new(), &mut io::empty(), &mut io::sink()).is_ok());
+        assert!(eval(script, &mut Mem::new(), io::empty(), io::sink()).is_ok());
     }
 
 }
