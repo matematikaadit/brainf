@@ -142,7 +142,11 @@ mod test {
     #[test]
     fn test_hello_world() {
         // taken from wikipedia
-        let hello_world = b"++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
+        let hello_world = b"++++++++\
+                            [>++++\
+                            [>++>+++>+++>+<<<<-]\
+                            >+>+>->>+[<]<-]\
+                            >>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
         let mut output = Vec::new();
         assert!(eval(hello_world, &mut Mem::new(), io::empty(), &mut output).is_ok());
         assert_eq!(&output, b"Hello World!\n");
